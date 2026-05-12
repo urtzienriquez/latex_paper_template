@@ -1,0 +1,45 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[style=apa, backend=biber]{biblatex} % Force biber
+\usepackage{authblk}
+
+\title{Title}
+\author[1]{First Author}
+\author[2]{Second Author}
+\affil[1]{First affiliation}
+\affil[2]{Second affiliation}
+\date{\today}
+
+\addbibresource{/home/urtzi/Documents/zotero.bib}
+
+\begin{document}
+
+<<label=setup, echo=FALSE, message=FALSE, warning=FALSE>>=
+# Set global chunk options to minimize per-chunk options
+opts_chunk$set(
+  echo = FALSE, # Never show code
+  message = FALSE, # No messages
+  warning = FALSE, # No warnings
+  fig.width = 6, # Default figure width
+  fig.height = 4, # Default figure height
+  fig.align = "center", # Center figures
+  fig.pos = "!htb" # Figure position
+)
+@
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+HERE GOES THE BODY
+
+\section{References}
+
+\printbibliography[heading=none]
+
+\end{document}
