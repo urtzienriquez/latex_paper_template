@@ -4,7 +4,6 @@
 \end{abstract}
 
 
-
 \section{References}
 
 \printbibliography[heading=none]

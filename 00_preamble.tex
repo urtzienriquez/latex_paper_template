@@ -1,0 +1,42 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[style=apa, backend=biber]{biblatex}
+\usepackage{authblk}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor={Blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue}}
+
+\makeatletter
+\renewcommand\AB@affilsepx{\protect\\\vspace{\baselineskip}\protect\Affilfont}
+\makeatother
+
+\date{\vspace{-5ex}}
+\include{01_titlepage}
+
+\makeatletter
+\let\papertitle\@title
+\let\paperauthors\@author
+\newcommand{\appendixtitleblock}[1]{
+  \begin{center}
+    {\Large\textbf{Appendix #1} \textit{for:} \papertitle}
+    \vskip 1em
+    {\large\paperauthors}
+  \end{center}
+  \vskip 1.5em
+}
+\makeatother
+
+\renewcommand*{\Affilfont}{\footnotesize\normalfont}
+% \renewcommand*{\Authfont}{\normalsize\normalfont}
+
+\addbibresource{/home/urtzi/Documents/zotero.bib}
