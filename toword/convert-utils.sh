@@ -213,7 +213,13 @@ with zipfile.ZipFile(docx_path, 'w', zipfile.ZIP_DEFLATED) as zout:
 
 shutil.rmtree(tmpdir)
 PYTHON_POST
-        find . -maxdepth 1 -name 'tikz_*.png' -delete -o -name 'tikz_*.pdf' -delete 2>/dev/null
+        found=$(find . -maxdepth 1 \( -name 'tikz_*.png' -o -name 'tikz_*.pdf' \) -print -quit)
+        if [ -n "$found" ]; then
+            n=0; while [ -d "$(printf "tikz_pictures_%02d" $n)" ]; do n=$((n + 1)); done
+            dir="$(printf "tikz_pictures_%02d" $n)"
+            mkdir -p "$dir"
+            find . -maxdepth 1 \( -name 'tikz_*.png' -o -name 'tikz_*.pdf' \) -exec mv {} "$dir" \;
+        fi
         echo "Conversion successful!"
     else
         echo "Error: Pandoc conversion failed"; return 1
