@@ -1,0 +1,63 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[style=apa, backend=biber]{biblatex}
+\usepackage{authblk}
+
+\title{Title}
+\author[1]{First Author}
+\author[2]{Second Author}
+\author[1,2]{Third Author}
+\affil[1]{Affiliation One}
+\affil[2]{Affiliation Two}
+\date{\today}
+
+\makeatletter
+\let\papertitle\@title
+\let\paperauthors\@author
+\let\paperdate\@date
+\newcommand{\appendixtitleblock}[1]{
+  \begin{center}
+    {\Large\textbf{Appendix #1} \textit{for:} \papertitle}
+    \vskip 1em
+    {\large\paperauthors}
+  \end{center}
+  \vskip 1.5em
+}
+\makeatother
+
+\addbibresource{/home/urtzi/Documents/zotero.bib}
+
+\begin{document}
+
+<<label=setup, echo=FALSE, message=FALSE, warning=FALSE>>=
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6,
+  fig.height = 4,
+  fig.align = "center",
+  fig.pos = "!htb",
+  fig.path = file.path(getwd(), "figures")
+)
+@
+
+% \include only for texlab. Harmless but remove for final compilation
+\include{1_main.Rnw} 
+<<child='1_main.Rnw', eval=TRUE>>=
+@
+
+\include{2_appendix1.Rnw}
+<<child='2_appendix1.Rnw', eval=TRUE>>=
+@
+
+\include{3_appendix2.Rnw}
+<<child='3_appendix2.Rnw', eval=TRUE>>=
+@
+
+
+\end{document}

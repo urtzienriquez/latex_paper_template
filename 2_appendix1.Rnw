@@ -1,0 +1,15 @@
+\newpage
+\newrefsection
+\setcounter{section}{0}
+\renewcommand{\thefigure}{S1.\arabic{figure}}
+\setcounter{figure}{0}
+\renewcommand{\thetable}{S1.\arabic{table}}
+\setcounter{table}{0}
+
+\appendixtitleblock{1}\label{appendix1}
+
+
+\section{References}
+
+\printbibliography[heading=none]
+

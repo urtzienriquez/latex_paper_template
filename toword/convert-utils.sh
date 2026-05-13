@@ -43,8 +43,8 @@ with open(input_file, 'r') as f:
 content = re.sub(r'\\nptextcite\{([^}]*)\}', r'\\textcite{\1}', content)
 
 # --- 2. Fix authblk ---
-authblk_authors = re.findall(r'\\author\[(\d+)\]\{([^}]*)\}', content)
-authblk_affils = re.findall(r'\\affil\[(\d+)\]\{([^}]*)\}', content)
+authblk_authors = re.findall(r'\\author\[([\d,]+)\]\{([^}]*)\}', content)
+authblk_affils = re.findall(r'\\affil\[([\d,]+)\]\{([^}]*)\}', content)
 
 if authblk_authors:
     author_names = []
@@ -65,8 +65,8 @@ if authblk_authors:
 
     author_block = f"\\begin{{center}}{author_str}\\end{{center}}\n\\begin{{flushleft}}{affil_str}\\end{{flushleft}}"
 
-    content = re.sub(r'\\author\[\d+\]\{[^}]*\}\n?', '', content)
-    content = re.sub(r'\\affil\[\d+\]\{[^}]*\}\n?', '', content)
+    content = re.sub(r'\\author\[[\d,]+\]\{[^}]*\}\n?', '', content)
+    content = re.sub(r'\\affil\[[\d,]+\]\{[^}]*\}\n?', '', content)
     content = content.replace('\\usepackage{authblk}\n', '')
     content = content.replace('\\usepackage{authblk}', '')
     content = content.replace('\\date{\\today}\n', '')
