@@ -39,6 +39,12 @@ output_file = sys.argv[2]
 with open(input_file, 'r') as f:
     content = f.read()
 
+# Extract title and authors for \appendixtitleblock expansion
+raw_title = re.search(r'\\title\{([^}]*)\}', content)
+paper_title = raw_title.group(1) if raw_title else ''
+raw_authors = re.findall(r'\\author(?:\[\d+(?:,\d+)*\])?\{([^}]*)\}', content)
+paper_authors = '; '.join(raw_authors) if raw_authors else ''
+
 # --- 1. Fix \nptextcite ---
 content = re.sub(r'\\nptextcite\{([^}]*)\}', r'\\textcite{\1}', content)
 
@@ -120,15 +126,34 @@ if '\\begin{tikzpicture}' in content:
 
         content = content[:match.start()] + f"\\includegraphics{{{img_name}}}" + content[match.end():]
 
+# --- 4. Expand \appendixtitleblock ---
+def expand_appendix(m):
+    num = m.group(1)
+    label = m.group(2)
+    return ("\\begin{center}\n"
+            "{\\Large\\textbf{Appendix " + num + "} \\textit{for:} " + paper_title + "}\n"
+            "\n"
+            "{\\large " + paper_authors + "}\n"
+            "\\end{center}\n"
+            "\n"
+            "\\label{" + label + "}")
+
+content = re.sub(
+    r'\\appendixtitleblock\{(\d+)\}\\label\{(\w+)\}',
+    expand_appendix,
+    content
+)
+
 with open(output_file, 'w') as f:
     f.write(content)
 PYTHON_SCRIPT
 
-    local cmd=(pandoc "$processed_input" --citeproc)
+    local cmd=(pandoc "$processed_input")
     [ -f "zotero.bib" ] && cmd+=(--bibliography=zotero.bib)
     [ -f "packages.bib" ] && cmd+=(--bibliography=packages.bib)
 
-    cmd+=(-csl global-ecology-and-biogeography.csl
+    cmd+=(--lua-filter refsection-bibliographies.lua
+        -csl global-ecology-and-biogeography.csl
         --lua-filter number-figures.lua
         --lua-filter fix-inner-parens.lua
         --lua-filter fix-titleblock.lua)

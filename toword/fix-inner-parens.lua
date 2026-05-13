@@ -1,76 +1,89 @@
 -- fix-inner-parens.lua
--- After citeproc has rendered citations, find parenthetical groups
--- that contain year-parens like (2009) and strip the inner year-parens.
--- E.g.  (as said by Author (2009))  -->  (as said by Author 2009)
--- Does NOT affect standalone \textcite: Author (2009) stays as-is.
 
-local function strip_year_parens(text)
-  return text:gsub("%((%d+)%)", "%1")
+local pandoc = require("pandoc")
+
+-- helper: scan left skipping Spaces and Str "~" tokens, return true if we find a Str that ends with "("
+local function scan_left_for_open_paren(inlines, idx)
+	local j = idx - 1
+	while j >= 1 do
+		local t = inlines[j]
+		if t.t == "Space" then
+			j = j - 1
+		elseif t.t == "Str" and t.text == "~" then
+			j = j - 1
+		elseif t.t == "Str" then
+			return t.text:match("%($") ~= nil
+		else
+			return false
+		end
+	end
+	return false
 end
 
-local function process_recursive(inlines)
-  for _, el in ipairs(inlines) do
-    if el.t == "Str" then
-      el.text = strip_year_parens(el.text)
-    elseif el.t == "Span" then
-      process_recursive(el.content)
-    elseif el.t == "Cite" then
-      process_recursive(el.content)
-    end
-  end
+-- helper: scan right skipping Spaces and Str "~" tokens, return true if we find a Str that begins with ")"
+local function scan_right_for_close_paren(inlines, idx)
+	local k = idx + 1
+	while k <= #inlines do
+		local t = inlines[k]
+		if t.t == "Space" then
+			k = k + 1
+		elseif t.t == "Str" and t.text == "~" then
+			k = k + 1
+		elseif t.t == "Str" then
+			return t.text:match("^%)") ~= nil
+		else
+			return false
+		end
+	end
+	return false
 end
 
-local function fix_inlines(inlines)
-  local i = 1
-  while i <= #inlines do
-    local el = inlines[i]
-    if el.t == "Str" and el.text:match("^%(") then
-      local open_paren_count = select(2, el.text:gsub("%(", ""))
-      local close_paren_count = select(2, el.text:gsub("%)", ""))
-      local depth = open_paren_count - close_paren_count
+function remove_innermost_parens(inlines)
+	local i = 1
+	while i <= #inlines do
+		local el = inlines[i]
 
-      local j = i + 1
-      local close_idx = nil
-      while j <= #inlines do
-        local e = inlines[j]
-        if e.t == "Str" then
-          local oc = select(2, e.text:gsub("%(", ""))
-          local cc = select(2, e.text:gsub("%)", ""))
-          depth = depth + oc - cc
-          if depth <= 0 then
-            close_idx = j
-            break
-          end
-        end
-        j = j + 1
-      end
+		if el.t == "Cite" then
+			-- use small lookaround that skips only Space and literal "~" tokens
+			local left_nested = scan_left_for_open_paren(inlines, i)
+			local right_nested = scan_right_for_close_paren(inlines, i)
 
-      if close_idx then
-        for k = i, close_idx do
-          local e = inlines[k]
-          if e.t == "Str" then
-            e.text = strip_year_parens(e.text)
-          elseif e.t == "Span" then
-            process_recursive(e.content)
-          elseif e.t == "Cite" then
-            process_recursive(e.content)
-          end
-        end
-        i = close_idx
-      end
-    end
-    i = i + 1
-  end
-  return inlines
+			-- If either side is nested, remove parentheses inside citation (only on first/last token)
+			if left_nested or right_nested then
+				local c = el.content
+				if #c >= 1 then
+					local first = c[1]
+					local last = c[#c]
+
+					-- Remove leading '(' if present on the first token
+					if first.t == "Str" and first.text:match("^%(") then
+						first.text = first.text:gsub("^%(", "", 1)
+					end
+					-- Remove trailing ')' if present on the last token
+					if last.t == "Str" and last.text:match("%)$") then
+						last.text = last.text:gsub("%)$", "", 1)
+					end
+				end
+			end
+		end
+
+		i = i + 1
+	end
+	return inlines
 end
 
+-- Apply to all paragraphs and plain blocks
 local function walk_block(block)
-  if block.t == "Para" or block.t == "Plain" then
-    block.content = fix_inlines(block.content)
-  end
-  return block
+	if block.t == "Para" or block.t == "Plain" then
+		block.content = remove_innermost_parens(block.content)
+	end
+	return block
 end
 
+-- Return Pandoc filter
 return {
-  {Para = walk_block, Plain = walk_block},
+	{
+		Para = walk_block,
+		Plain = walk_block,
+	},
 }
