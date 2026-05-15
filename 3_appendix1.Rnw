@@ -1,3 +1,4 @@
+% !TeX root = 1_index.Rnw
 \newpage
 \newrefsection
 \setcounter{section}{0}
