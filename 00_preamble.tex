@@ -1,29 +1,31 @@
 \documentclass[12pt]{article}
 
-% Page layout
+% page layout
 \usepackage[margin=1in]{geometry}
 
-% Graphics and colors
+% graphics and colors
 \usepackage[dvipsnames]{xcolor}
 \usepackage{graphicx}
 \usepackage{float}
 
-% Math and tables
+% math and tables
 \usepackage{amsmath}
 \usepackage{booktabs}
 
-% Bibliography
+% bibliography
 \usepackage[style=apa, backend=biber]{biblatex}
 
-% Authors and affiliations
+% authors and affiliations
 \usepackage{authblk}
 \renewcommand*{\Affilfont}{\footnotesize\normalfont}
 
-% Knitr code formatting
+% knitr, listings, and text code formatting packages
 \usepackage{alltt}
 \usepackage{framed}
+\usepackage{etoolbox}
+\usepackage{listings}
 
-% Hyperlinks (load near end)
+% hyperlinks
 \usepackage{hyperref}
 \hypersetup{
   colorlinks=true,
@@ -33,19 +35,19 @@
   urlcolor=Blue
 }
 
-% Custom commands for title page
+% custom commands for title page
 \input{01_titlepage}
 \date{\vspace{-5ex}}
 
 \makeatletter
-% Fix authblk spacing
+% fix authblk spacing
 \renewcommand\AB@affilsepx{\protect\\\vspace{\baselineskip}\protect\Affilfont}
 
-% Store title and author for appendix
+% store title and author for appendix
 \let\papertitle\@title
 \let\paperauthors\@author
 
-% Appendix title block
+% appendix title block
 \newcommand{\appendixtitleblock}[1]{
   \begin{center}
     {\Large\textbf{Appendix #1} \textit{for:} \papertitle}
@@ -55,7 +57,7 @@
   \vskip 1.5em
 }
 
-% Image width constraint
+% image width constraint
 \def\maxwidth{%
   \ifdim\Gin@nat@width>\textwidth
     \textwidth
@@ -63,23 +65,22 @@
     \Gin@nat@width
   \fi
 }
+\makeatother
 
-% Knitr environment setup
-\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+% knitr code block customizations 
+\definecolor{fgcolor}{rgb}{0.000, 0.000, 0.000}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}
 
 \newenvironment{knitrout}{}{}
 
-% kframe environment definition:
-\newenvironment{kframe}{
-  \begin{snugshade}
-    }{
-  \end{snugshade}
-}
-\makeatother
+% redefine kframe to be completely transparent/empty
+\newenvironment{kframe}{}{}
 
-% Knitr syntax highlighting
-% Pandoc Tango style
+% wrap only the source code block (alltt) inside the gray box
+\BeforeBeginEnvironment{alltt}{\begin{snugshade}}
+    \AfterEndEnvironment{alltt}{\end{snugshade}}
+
+% knitr syntax highlighting (pandoc tango style match)
 \newcommand{\hlnum}[1]{\textcolor[rgb]{0.000,0.000,0.812}{#1}}
 \newcommand{\hlstr}[1]{\textcolor[rgb]{0.306,0.604,0.024}{#1}}
 \newcommand{\hlsng}[1]{\textcolor[rgb]{0.306,0.604,0.024}{#1}}
@@ -92,4 +93,23 @@
 \newcommand{\hlkwa}[1]{\textcolor[rgb]{0.125,0.290,0.529}{\textbf{#1}}}
 \newcommand{\hlkwb}[1]{\textcolor[rgb]{0.125,0.290,0.529}{#1}}
 \newcommand{\hlkwr}[1]{\textcolor[rgb]{0.647,0.000,0.000}{\textbf{#1}}}
+
+% listings configurations for inline \R
+\lstset{
+  language=R,
+  basicstyle=\small\ttfamily\color{black},
+  keywordstyle=\color[rgb]{0.125,0.290,0.529}\bfseries, % Matches \hlkwd
+  stringstyle=\color[rgb]{0.306,0.604,0.024},           % Matches \hlstr
+  commentstyle=\color[rgb]{0.561,0.349,0.008}\itshape,  % Matches \hlcom
+  showstringspaces=false,
+  breaklines=true
+}
+
+% inline R macro with adjusted padding box
+\newcommand{\R}[1]{%
+  \begingroup
+  \setlength{\fboxsep}{1.5pt}
+  \colorbox{shadecolor}{\lstinline[language=R]!#1!}
+  \endgroup
+}
 
