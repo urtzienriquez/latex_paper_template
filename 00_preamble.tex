@@ -21,7 +21,7 @@
 
 % Knitr code formatting
 \usepackage{alltt}
-\usepackage[many]{tcolorbox}
+\usepackage{framed}
 
 % Hyperlinks (load near end)
 \usepackage{hyperref}
@@ -50,7 +50,7 @@
   \begin{center}
     {\Large\textbf{Appendix #1} \textit{for:} \papertitle}
     \vskip 1em
-    {\large\paperauthors}
+      {\large\paperauthors}
   \end{center}
   \vskip 1.5em
 }
@@ -70,21 +70,11 @@
 
 \newenvironment{knitrout}{}{}
 
-\newenvironment{kframe}{%
-  \tcolorbox[%
-    breakable,
-    colback=shadecolor,
-    colframe=shadecolor,
-    arc=0pt,
-    boxrule=0pt,
-    left=0pt,
-    right=0pt,
-    top=0pt,
-    bottom=0pt,
-    boxsep=5pt
-  ]%
-}{%
-  \endtcolorbox
+% kframe environment definition:
+\newenvironment{kframe}{
+  \begin{snugshade}
+    }{
+  \end{snugshade}
 }
 \makeatother
 
@@ -102,3 +92,4 @@
 \newcommand{\hlkwa}[1]{\textcolor[rgb]{0.125,0.290,0.529}{\textbf{#1}}}
 \newcommand{\hlkwb}[1]{\textcolor[rgb]{0.125,0.290,0.529}{#1}}
 \newcommand{\hlkwr}[1]{\textcolor[rgb]{0.647,0.000,0.000}{\textbf{#1}}}
+
