@@ -1,14 +1,18 @@
 # copy the ".tex", ".bib" and ".csl" files here and run:
-# toword [-m] -i input.tex -o output.docx
+# toword [-m] [-t] -i input.tex -o output.docx
+# -m, --move-figures: move figures to end of document
+# -t, --move-tables: move tables to end of document
 
 toword() {
     local input=""
     local output=""
     local use_move_figures=false
+    local use_move_tables=false
     
     while [[ $# -gt 0 ]]; do
         case $1 in
             -m|--move-figures) use_move_figures=true; shift ;;
+            -t|--move-tables) use_move_tables=true; shift ;;
             -i|--input) input="$2"; shift 2 ;;
             -o|--output) output="$2"; shift 2 ;;
             *) echo "Unknown option: $1"; return 1 ;;
@@ -213,14 +217,16 @@ PYTHON_SCRIPT
     cmd+=(--lua-filter refsection-bibliographies.lua
         -csl global-ecology-and-biogeography.csl
         --lua-filter number-figures.lua
+        --lua-filter number-tables.lua
         --lua-filter fix-inner-parens.lua
         --lua-filter fix-titleblock.lua
         --lua-filter code-block-lang.lua
         --highlight-style tango)
 
     [ "$use_move_figures" = true ] && cmd+=(--lua-filter move-figures.lua)
+    [ "$use_move_tables" = true ] && cmd+=(--lua-filter move-tables.lua)
     [ -f tikz-to-image.lua ] && cmd+=(--lua-filter tikz-to-image.lua)
-    cmd+=(--reference-doc=latex7.dotx -o "$output")
+    cmd+=(--reference-doc=latex_word_ref.docx -o "$output")
 
     "${cmd[@]}"
     local exit_code=$?
@@ -264,41 +270,6 @@ for p in paras:
 
 tree.write(doc_path, xml_declaration=True, encoding='UTF-8')
 
-# Set monospace font for Source Code style
-styles_path = os.path.join(tmpdir, 'word', 'styles.xml')
-styles_tree = ET.parse(styles_path)
-styles_root = styles_tree.getroot()
-for s in styles_root.findall(f'.//{{{w}}}style'):
-    name_el = s.find(f'{{{w}}}name')
-    if name_el is not None and name_el.get(f'{{{w}}}val') == 'Source Code':
-        rPr = s.find(f'{{{w}}}rPr')
-        if rPr is None:
-            rPr = ET.SubElement(s, f'{{{w}}}rPr')
-            s.insert(0, rPr)
-        rFonts = rPr.find(f'{{{w}}}rFonts')
-        if rFonts is None:
-            rFonts = ET.SubElement(rPr, f'{{{w}}}rFonts')
-        rFonts.set(f'{{{w}}}ascii', 'Free Mono')
-        rFonts.set(f'{{{w}}}hAnsi', 'Free Mono')
-        rFonts.set(f'{{{w}}}cs', 'Free Mono')
-        # Left-align and remove indentation
-        pPr = s.find(f'{{{w}}}pPr')
-        if pPr is None:
-            pPr = ET.SubElement(s, f'{{{w}}}pPr')
-            s.insert(0, pPr)
-        jc = pPr.find(f'{{{w}}}jc')
-        if jc is None:
-            jc = ET.SubElement(pPr, f'{{{w}}}jc')
-        jc.set(f'{{{w}}}val', 'left')
-        ind = pPr.find(f'{{{w}}}ind')
-        if ind is None:
-            ind = ET.SubElement(pPr, f'{{{w}}}ind')
-        ind.set(f'{{{w}}}firstLine', '0')
-        ind.set(f'{{{w}}}start', '0')
-        ind.set(f'{{{w}}}left', '0')
-        break
-styles_tree.write(styles_path, xml_declaration=True, encoding='UTF-8')
-
 with zipfile.ZipFile(docx_path, 'w', zipfile.ZIP_DEFLATED) as zout:
     for dirpath, _, filenames in os.walk(tmpdir):
         for fn in filenames:
@@ -320,4 +291,3 @@ PYTHON_POST
         echo "Error: Pandoc conversion failed"; return 1
     fi
 }
-

@@ -1,6 +1,7 @@
 -- fix-titleblock.lua
 -- Reorder title, author, abstract, and keywords before Introduction.
 -- Handles both rmarkdown (macro-based title run) and knitr (metadata-only) output.
+-- Also resolves figure and table references in abstracts.
 
 local utils = require("pandoc.utils")
 local TITLE_MACRO_PATTERN = "\\%w+titleblock"
@@ -107,7 +108,7 @@ local function build_abstract_from_meta(meta)
 end
 
 -- Resolve \ref cross-references inside abstract blocks using the document's
--- figure/table identifier map.
+-- figure and table identifier map.
 local function resolve_refs_in_blocks(blocks, ref_map)
 	for _, blk in ipairs(blocks) do
 		if blk.t == "Para" or blk.t == "Plain" then
@@ -157,7 +158,7 @@ function Pandoc(doc)
 		end
 	end
 
-	-- build figure/table reference map
+	-- build figure and table reference map
 	local ref_map = {}
 	local fig_num = 0
 	local tbl_num = 0
@@ -189,7 +190,7 @@ function Pandoc(doc)
 		abs_blocks = build_abstract_from_meta(doc.meta)
 	end
 
-	-- resolve cross-refs in abstract blocks
+	-- resolve cross-refs in abstract blocks (both figures and tables)
 	resolve_refs_in_blocks(abs_blocks, ref_map)
 
 	-- extract keywords block
