@@ -33,6 +33,43 @@ def find_balanced(text, start_index):
         if count == 0: return i + 1
     return None
 
+def strip_hl_from_alltt(alltt_content):
+    i = 0
+    parts = []
+    while i < len(alltt_content):
+        m = re.match(r'\\(hl[a-z]+)\{', alltt_content[i:])
+        if m:
+            brace = i + m.end() - 1
+            close = find_balanced(alltt_content, brace)
+            if close:
+                parts.append(alltt_content[brace + 1:close - 1])
+                i = close
+                continue
+        parts.append(alltt_content[i])
+        i += 1
+    return ''.join(parts)
+
+def process_alltt_environments(content):
+    result = []
+    pos = 0
+    while True:
+        start = content.find('\\begin{alltt}', pos)
+        if start == -1:
+            result.append(content[pos:])
+            break
+        result.append(content[pos:start])
+        end = content.find('\\end{alltt}', start)
+        if end == -1:
+            result.append(content[start:])
+            break
+        inner = content[start + len('\\begin{alltt}'):end]
+        cleaned = strip_hl_from_alltt(inner)
+        result.append('\\begin{verbatim}')
+        result.append(cleaned)
+        result.append('\\end{verbatim}')
+        pos = end + len('\\end{alltt}')
+    return ''.join(result)
+
 input_file = sys.argv[1]
 output_file = sys.argv[2]
 
@@ -42,15 +79,18 @@ with open(input_file, 'r') as f:
 # Extract title and authors for \appendixtitleblock expansion
 raw_title = re.search(r'\\title\{([^}]*)\}', content)
 paper_title = raw_title.group(1) if raw_title else ''
-raw_authors = re.findall(r'\\author(?:\[\d+(?:,\d+)*\])?\{([^}]*)\}', content)
+
+# Allow symbols like '*' in the global author scanner block
+raw_authors = re.findall(r'\\author(?:\[[^\]]+\])?\{([^}]*)\}', content)
 paper_authors = '; '.join(raw_authors) if raw_authors else ''
 
-# --- 1. Fix \nptextcite ---
+# Fix \nptextcite
 content = re.sub(r'\\nptextcite\{([^}]*)\}', r'\\textcite{\1}', content)
 
-# --- 2. Fix authblk ---
-authblk_authors = re.findall(r'\\author\[([\d,]+)\]\{([^}]*)\}', content)
-authblk_affils = re.findall(r'\\affil\[([\d,]+)\]\{([^}]*)\}', content)
+# Fix authblk
+# Allow alphanumeric and punctuation tags (like '1*') inside brackets
+authblk_authors = re.findall(r'\\author\[([^\]]+)\]\{([^}]*)\}', content)
+authblk_affils = re.findall(r'\\affil\[([^\]]+)\]\{([^}]*)\}', content)
 
 if authblk_authors:
     author_names = []
@@ -71,15 +111,16 @@ if authblk_authors:
 
     author_block = f"\\begin{{center}}{author_str}\\end{{center}}\n\\begin{{flushleft}}{affil_str}\\end{{flushleft}}"
 
-    content = re.sub(r'\\author\[[\d,]+\]\{[^}]*\}\n?', '', content)
-    content = re.sub(r'\\affil\[[\d,]+\]\{[^}]*\}\n?', '', content)
+    # Update deletion regexes to match the updated bracket wildcard
+    content = re.sub(r'\\author\[[^\]]+\]\{[^}]*\}\n?', '', content)
+    content = re.sub(r'\\affil\[[^\]]+\]\{[^}]*\}\n?', '', content)
     content = content.replace('\\usepackage{authblk}\n', '')
     content = content.replace('\\usepackage{authblk}', '')
     content = content.replace('\\date{\\today}\n', '')
     content = content.replace('\\date{\\today}', '')
     content = content.replace('\\maketitle', f'\\maketitle\n\n{author_block}\n\n\\vspace{{1em}}')
 
-# --- 3. Handle TikZ pictures (if present) ---
+# Handle TikZ pictures (if present)
 if '\\begin{tikzpicture}' in content:
     print("TikZ code detected - preprocessing...")
 
@@ -126,7 +167,7 @@ if '\\begin{tikzpicture}' in content:
 
         content = content[:match.start()] + f"\\includegraphics{{{img_name}}}" + content[match.end():]
 
-# --- 4. Expand \appendixtitleblock ---
+# Expand \appendixtitleblock
 def expand_appendix(m):
     num = m.group(1)
     label = m.group(2)
@@ -138,9 +179,26 @@ def expand_appendix(m):
             "\n"
             "\\label{" + label + "}")
 
+# Add \s* to support spaces or line breaks between \appendixtitleblock and \label
 content = re.sub(
-    r'\\appendixtitleblock\{(\d+)\}\\label\{(\w+)\}',
+    r'\\appendixtitleblock\{(\d+)\}\s*\\label\{(\w+)\}',
     expand_appendix,
+    content
+)
+
+# Strip \hlXXX commands from alltt environments and convert to verbatim
+# (Pandoc does not allow \textcolor inside alltt)
+content = process_alltt_environments(content)
+
+# Strip knitr wrapper environments (no-ops in DOCX output)
+content = re.sub(r'\\begin\{knitrout\}', '', content)
+content = re.sub(r'\\end\{knitrout\}', '', content)
+content = re.sub(r'\\begin\{kframe\}', '', content)
+content = re.sub(r'\\end\{kframe\}', '', content)
+# Strip knitr color commands (not meaningful in DOCX)
+content = re.sub(
+    r'\\definecolor\{shadecolor\}\{rgb\}\{[^}]*\}\\color\{fgcolor\}(?:\\begin\{kframe\})?',
+    '',
     content
 )
 
@@ -156,7 +214,9 @@ PYTHON_SCRIPT
         -csl global-ecology-and-biogeography.csl
         --lua-filter number-figures.lua
         --lua-filter fix-inner-parens.lua
-        --lua-filter fix-titleblock.lua)
+        --lua-filter fix-titleblock.lua
+        --lua-filter code-block-lang.lua
+        --highlight-style tango)
 
     [ "$use_move_figures" = true ] && cmd+=(--lua-filter move-figures.lua)
     [ -f tikz-to-image.lua ] && cmd+=(--lua-filter tikz-to-image.lua)
@@ -204,6 +264,41 @@ for p in paras:
 
 tree.write(doc_path, xml_declaration=True, encoding='UTF-8')
 
+# Set monospace font for Source Code style
+styles_path = os.path.join(tmpdir, 'word', 'styles.xml')
+styles_tree = ET.parse(styles_path)
+styles_root = styles_tree.getroot()
+for s in styles_root.findall(f'.//{{{w}}}style'):
+    name_el = s.find(f'{{{w}}}name')
+    if name_el is not None and name_el.get(f'{{{w}}}val') == 'Source Code':
+        rPr = s.find(f'{{{w}}}rPr')
+        if rPr is None:
+            rPr = ET.SubElement(s, f'{{{w}}}rPr')
+            s.insert(0, rPr)
+        rFonts = rPr.find(f'{{{w}}}rFonts')
+        if rFonts is None:
+            rFonts = ET.SubElement(rPr, f'{{{w}}}rFonts')
+        rFonts.set(f'{{{w}}}ascii', 'Free Mono')
+        rFonts.set(f'{{{w}}}hAnsi', 'Free Mono')
+        rFonts.set(f'{{{w}}}cs', 'Free Mono')
+        # Left-align and remove indentation
+        pPr = s.find(f'{{{w}}}pPr')
+        if pPr is None:
+            pPr = ET.SubElement(s, f'{{{w}}}pPr')
+            s.insert(0, pPr)
+        jc = pPr.find(f'{{{w}}}jc')
+        if jc is None:
+            jc = ET.SubElement(pPr, f'{{{w}}}jc')
+        jc.set(f'{{{w}}}val', 'left')
+        ind = pPr.find(f'{{{w}}}ind')
+        if ind is None:
+            ind = ET.SubElement(pPr, f'{{{w}}}ind')
+        ind.set(f'{{{w}}}firstLine', '0')
+        ind.set(f'{{{w}}}start', '0')
+        ind.set(f'{{{w}}}left', '0')
+        break
+styles_tree.write(styles_path, xml_declaration=True, encoding='UTF-8')
+
 with zipfile.ZipFile(docx_path, 'w', zipfile.ZIP_DEFLATED) as zout:
     for dirpath, _, filenames in os.walk(tmpdir):
         for fn in filenames:
@@ -225,3 +320,4 @@ PYTHON_POST
         echo "Error: Pandoc conversion failed"; return 1
     fi
 }
+

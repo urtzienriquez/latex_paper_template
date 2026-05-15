@@ -1,31 +1,51 @@
 \documentclass[12pt]{article}
+
+% Page layout
 \usepackage[margin=1in]{geometry}
-\usepackage{float}
+
+% Graphics and colors
+\usepackage[dvipsnames]{xcolor}
 \usepackage{graphicx}
+\usepackage{float}
+
+% Math and tables
 \usepackage{amsmath}
 \usepackage{booktabs}
-\usepackage[style=apa, backend=biber]{biblatex}
-\usepackage{authblk}
-\usepackage[dvipsnames]{xcolor}
-\usepackage{hyperref}
 
+% Bibliography
+\usepackage[style=apa, backend=biber]{biblatex}
+
+% Authors and affiliations
+\usepackage{authblk}
+\renewcommand*{\Affilfont}{\footnotesize\normalfont}
+
+% Knitr code formatting
+\usepackage{alltt}
+\usepackage[many]{tcolorbox}
+
+% Hyperlinks (load near end)
+\usepackage{hyperref}
 \hypersetup{
   colorlinks=true,
-  linkcolor={Blue},
-  filecolor={Maroon},
-  citecolor={Blue},
-  urlcolor={Blue}}
+  linkcolor=Blue,
+  filecolor=Maroon,
+  citecolor=Blue,
+  urlcolor=Blue
+}
 
-\makeatletter
-\renewcommand\AB@affilsepx{\protect\\\vspace{\baselineskip}\protect\Affilfont}
-\makeatother
-
+% Custom commands for title page
+\input{01_titlepage}
 \date{\vspace{-5ex}}
-\include{01_titlepage}
 
 \makeatletter
+% Fix authblk spacing
+\renewcommand\AB@affilsepx{\protect\\\vspace{\baselineskip}\protect\Affilfont}
+
+% Store title and author for appendix
 \let\papertitle\@title
 \let\paperauthors\@author
+
+% Appendix title block
 \newcommand{\appendixtitleblock}[1]{
   \begin{center}
     {\Large\textbf{Appendix #1} \textit{for:} \papertitle}
@@ -34,9 +54,51 @@
   \end{center}
   \vskip 1.5em
 }
+
+% Image width constraint
+\def\maxwidth{%
+  \ifdim\Gin@nat@width>\textwidth
+    \textwidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+
+% Knitr environment setup
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}
+
+\newenvironment{knitrout}{}{}
+
+\newenvironment{kframe}{%
+  \tcolorbox[%
+    breakable,
+    colback=shadecolor,
+    colframe=shadecolor,
+    arc=0pt,
+    boxrule=0pt,
+    left=0pt,
+    right=0pt,
+    top=0pt,
+    bottom=0pt,
+    boxsep=5pt
+  ]%
+}{%
+  \endtcolorbox
+}
 \makeatother
 
-\renewcommand*{\Affilfont}{\footnotesize\normalfont}
-% \renewcommand*{\Authfont}{\normalsize\normalfont}
-
-\addbibresource{/home/urtzi/Documents/zotero.bib}
+% Knitr syntax highlighting
+% Pandoc Tango style
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.000,0.000,0.812}{#1}}
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.306,0.604,0.024}{#1}}
+\newcommand{\hlsng}[1]{\textcolor[rgb]{0.306,0.604,0.024}{#1}}
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.561,0.349,0.008}{\textit{#1}}}
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0.808,0.361,0.000}{\textbf{#1}}}
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.000,0.000,0.000}{#1}}
+\newcommand{\hldef}[1]{\textcolor[rgb]{0.000,0.000,0.000}{#1}}
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.125,0.290,0.529}{\textbf{#1}}}
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.561,0.349,0.008}{#1}}
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.125,0.290,0.529}{\textbf{#1}}}
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.125,0.290,0.529}{#1}}
+\newcommand{\hlkwr}[1]{\textcolor[rgb]{0.647,0.000,0.000}{\textbf{#1}}}

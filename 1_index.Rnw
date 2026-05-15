@@ -1,4 +1,12 @@
-\include{00_preamble}
+\input{00_preamble}
+\addbibresource{/home/urtzi/Documents/zotero.bib}
+
+\newif\iftexlab
+\iftexlab
+  \input{2_main.Rnw}
+  \input{3_appendix1.Rnw}
+  \input{4_appendix2.Rnw}
+\fi
 
 \begin{document}
 
@@ -13,20 +21,31 @@ knitr::opts_chunk$set(
   fig.pos = "!htb",
   fig.path = file.path(getwd(), "figures")
 )
+
+knitr::knit_hooks$set(document = function(x) {
+  full_text <- paste(x, collapse = "\n")
+  if (file.exists("00_preamble.tex")) {
+    preamble_text <- paste(readLines("00_preamble.tex"), collapse = "\n")
+    if (file.exists("01_titlepage.tex")) {
+      title_text <- paste(readLines("01_titlepage.tex"), collapse = "\n")
+      title_text_escaped <- gsub("\\\\", "\\\\\\\\", title_text)
+      preamble_text <- gsub("\\\\(input|include)\\{01_titlepage(\\.tex)?\\}", title_text_escaped, preamble_text)
+    }
+    preamble_text_escaped <- gsub("\\\\", "\\\\\\\\", preamble_text)
+    full_text <- gsub("\\\\input\\{00_preamble(\\.tex)?\\}", preamble_text_escaped, full_text)
+  }
+  full_text <- gsub("\\\\newif\\\\iftexlab[\\s\\S]*?\\\\fi", "", full_text, perl = TRUE)
+  full_text
+})
 @
 
-% \include only for texlab. Harmless but remove for final compilation
-\include{2_main.Rnw} 
 <<child='2_main.Rnw', eval=TRUE>>=
 @
 
-\include{3_appendix1.Rnw}
 <<child='3_appendix1.Rnw', eval=TRUE>>=
 @
 
-\include{4_appendix2.Rnw}
 <<child='4_appendix2.Rnw', eval=TRUE>>=
 @
-
 
 \end{document}
