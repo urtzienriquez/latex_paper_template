@@ -1,12 +1,5 @@
 % !TeX root = 1_index.Rnw
-\newpage
-\newrefsection
-\setcounter{section}{0}
-\renewcommand{\thefigure}{S1.\arabic{figure}}
-\setcounter{figure}{0}
-\renewcommand{\thetable}{S1.\arabic{table}}
-\setcounter{table}{0}
-
+\appendixsetup{1}
 \appendixtitleblock{1}\label{appendix1}
 
 

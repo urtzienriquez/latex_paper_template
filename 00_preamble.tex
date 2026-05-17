@@ -116,3 +116,14 @@
   \endgroup
 }
 
+% custom macro to setup the appendices
+\newcommand{\appendixsetup}[1]{
+  \newpage
+  \newrefsection
+  \setcounter{section}{0}
+  \renewcommand{\theHsection}{app#1.\arabic{section}}
+  \renewcommand{\thefigure}{S#1.\arabic{figure}}
+  \setcounter{figure}{0}
+  \renewcommand{\thetable}{S#1.\arabic{table}}
+  \setcounter{table}{0}
+}
