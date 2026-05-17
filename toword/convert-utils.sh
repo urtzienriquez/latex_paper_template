@@ -91,6 +91,13 @@ paper_authors = '; '.join(raw_authors) if raw_authors else ''
 # Fix \nptextcite
 content = re.sub(r'\\nptextcite\{([^}]*)\}', r'\\textcite{\1}', content)
 
+# Fix \printbibliography to produce \section{References} for refsection filter
+content = re.sub(
+    r'\\printbibliography\[heading=bibnumbered,\s*title=\{References\}\]',
+    r'\\section{References}\n\\printbibliography[heading=none]',
+    content
+)
+
 # Fix authblk
 # Allow alphanumeric and punctuation tags (like '1*') inside brackets
 authblk_authors = re.findall(r'\\author\[([^\]]+)\]\{([^}]*)\}', content)
@@ -141,15 +148,33 @@ if '\\begin{tikzpicture}' in content:
         else: search_pos += 7
     shared_styles = libraries + "\n" + "\n".join(tikzsets)
 
+    def find_figure_label(content, tikz_start):
+        fig_start = content.rfind(r'\begin{figure}', 0, tikz_start)
+        if fig_start == -1:
+            return None
+        fig_end = content.find(r'\end{figure}', tikz_start)
+        if fig_end == -1:
+            return None
+        label_match = re.search(
+            r'\\label\{fig:([^}]*)\}', content[fig_start:fig_end]
+        )
+        return label_match.group(1) if label_match else None
+
     tikz_pattern = r'\\begin{tikzpicture}.*?\\end{tikzpicture}'
     matches = list(re.finditer(tikz_pattern, content, re.DOTALL))
 
     for match in reversed(matches):
         tikz_code = match.group(0)
-        img_hash = hashlib.sha1(tikz_code.encode()).hexdigest()[:16]
-        img_name = f"tikz_{img_hash}.png"
+        label = find_figure_label(content, match.start())
+        if label:
+            base_name = f"tikz_{re.sub(r'[^\w\\-]', '_', label)}"
+        else:
+            img_hash = hashlib.sha1(tikz_code.encode()).hexdigest()[:16]
+            base_name = f"tikz_{img_hash}"
+        pdf_name = f"{base_name}.pdf"
+        svg_name = f"{base_name}.svg"
 
-        if not os.path.exists(img_name):
+        if not os.path.exists(svg_name):
             tex_content = f"""\\documentclass{{standalone}}
 \\usepackage{{tikz}}
 \\usetikzlibrary{{positioning,backgrounds,arrows.meta,calc}}
@@ -158,18 +183,17 @@ if '\\begin{tikzpicture}' in content:
 {tikz_code}
 \\end{{document}}"""
 
-            base_name = img_name[:-4]
             with open(f"{base_name}.tex", 'w') as f:
                 f.write(tex_content)
             subprocess.run(['pdflatex', '-interaction=batchmode', f"{base_name}.tex"],
                            stdout=subprocess.DEVNULL)
-            subprocess.run(['convert', '-density', '300', f"{base_name}.pdf", img_name],
+            subprocess.run(['pdftocairo', '-svg', pdf_name, svg_name],
                            stdout=subprocess.DEVNULL)
-            for ext in ['.tex', '.pdf', '.log', '.aux']:
+            for ext in ['.tex', '.log', '.aux']:
                 try: os.remove(f"{base_name}{ext}")
                 except: pass
 
-        content = content[:match.start()] + f"\\includegraphics{{{img_name}}}" + content[match.end():]
+        content = content[:match.start()] + f"\\includegraphics[width=\\textwidth]{{{svg_name}}}" + content[match.end():]
 
 # Expand \appendixtitleblock
 def expand_appendix(m):
@@ -279,12 +303,12 @@ with zipfile.ZipFile(docx_path, 'w', zipfile.ZIP_DEFLATED) as zout:
 
 shutil.rmtree(tmpdir)
 PYTHON_POST
-        found=$(find . -maxdepth 1 \( -name 'tikz_*.png' -o -name 'tikz_*.pdf' \) -print -quit)
+        found=$(find . -maxdepth 1 \( -name 'tikz_*.png' -o -name 'tikz_*.pdf' -o -name 'tikz_*.svg' \) -print -quit)
         if [ -n "$found" ]; then
             n=0; while [ -d "$(printf "tikz_pictures_%02d" $n)" ]; do n=$((n + 1)); done
             dir="$(printf "tikz_pictures_%02d" $n)"
             mkdir -p "$dir"
-            find . -maxdepth 1 \( -name 'tikz_*.png' -o -name 'tikz_*.pdf' \) -exec mv {} "$dir" \;
+            find . -maxdepth 1 \( -name 'tikz_*.png' -o -name 'tikz_*.pdf' -o -name 'tikz_*.svg' \) -exec mv {} "$dir" \;
         fi
         echo "Conversion successful!"
     else

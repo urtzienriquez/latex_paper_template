@@ -9,6 +9,7 @@ If you use the template or the conversion utilities and find any bugs, issue rep
 ## Prerequisites
 
 - LaTeX distribution with `latexmk`, `lualatex`, `biber`
+- `pdftocairo` (from poppler-utils) — used to convert TikZ PDF output to SVG
 - R with the `knitr` package
 
 ## Project structure
@@ -82,7 +83,7 @@ The `toword/` directory converts the compiled LaTeX to `.docx` using Pandoc with
 Copy your `.tex`, `.bib`, and `.csl` files into the `toword/` directory, then run:
 
 ```
-toword [-m] -i input.tex -o output.docx
+toword [-m] [-t] -i input.tex -o output.docx
 ```
 
 ### Options
@@ -92,6 +93,7 @@ toword [-m] -i input.tex -o output.docx
 | `-i`, `--input`        | Input `.tex` file                                    |
 | `-o`, `--output`       | Output `.docx` file                                  |
 | `-m`, `--move-figures` | Move figures to end of document (publisher-friendly) |
+| `-t`, `--move-tables`  | Move tables to end of document (publisher-friendly)  |
 
 ### What it does
 
@@ -100,8 +102,9 @@ The conversion runs three stages:
 **1. Pre-processing (Python)** — modifies the LaTeX before Pandoc touches it:
 
 - Reformats `\author` / `\affil` (authblk) into plain text
-- Converts TikZ pictures to PNG images
+- Converts TikZ pictures to SVG images (via `pdflatex` + `pdftocairo`); images are named after their `\label{fig:...}` when available, falling back to a content hash
 - Expands `\appendixtitleblock` with paper title and authors
+- Converts `\printbibliography[heading=bibnumbered, title={References}]` to a plain `\section{References}` (needed for the `refsection-bibliographies.lua` filter)
 - Strips knitr wrapper environments (`knitrout`, `kframe`)
 - Replaces `alltt` environments with `verbatim` (Pandoc doesn't support `\hl` commands inside `alltt`)
 - Fixes `\nptextcite` → `\textcite`
@@ -112,9 +115,9 @@ The conversion runs three stages:
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Bibliography    | Loads `zotero.bib` and `packages.bib` if present                                                                                                                                                 |
 | CSL style       | `global-ecology-and-biogeography.csl`                                                                                                                                                            |
-| Lua filters     | `refsection-bibliographies.lua`, `number-figures.lua`, `fix-inner-parens.lua`, `fix-titleblock.lua`, `code-block-lang.lua`, `tikz-to-image.lua` (if exists), `move-figures.lua` (only with `-m`) |
+| Lua filters     | `refsection-bibliographies.lua`, `number-figures.lua`, `number-tables.lua`, `fix-inner-parens.lua`, `fix-titleblock.lua`, `code-block-lang.lua`, `tikz-to-image.lua` (if exists), `move-figures.lua` (only with `-m`), `move-tables.lua` (only with `-t`) |
 | Highlight style | tango                                                                                                                                                                                            |
-| Reference doc   | `latex7.dotx` (provides the base DOCX styling)                                                                                                                                                   |
+| Reference doc   | `latex_word_ref.docx` (provides the base DOCX styling)           |
 
 **3. Post-processing (Python)** — patches the DOCX XML:
 
