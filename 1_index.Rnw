@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
   fig.height = 4,
   fig.align = "center",
   fig.pos = "!htb",
-  fig.path = file.path(getwd(), "figures/")
+  fig.path = file.path(getwd(), "/figures/")
 )
 
 knitr::knit_hooks$set(document = function(x) {
