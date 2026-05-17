@@ -10,7 +10,6 @@
 \appendixtitleblock{2}\label{appendix2}
 
 
-\section{References}
 
-\printbibliography[heading=none]
-
+% REFERENCES section
+\printbibliography[heading=bibnumbered, title={References}]
