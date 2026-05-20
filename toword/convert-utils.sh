@@ -32,9 +32,17 @@ import sys, re, hashlib, os, subprocess
 def find_balanced(text, start_index):
     count = 0
     for i in range(text.find('{', start_index), len(text)):
-        if text[i] == '{': count += 1
-        elif text[i] == '}': count -= 1
-        if count == 0: return i + 1
+        if text[i] in '{}':
+            j = i - 1
+            bs = 0
+            while j >= 0 and text[j] == '\\':
+                bs += 1
+                j -= 1
+            if bs % 2 == 1:
+                continue
+            if text[i] == '{': count += 1
+            elif text[i] == '}': count -= 1
+            if count == 0: return i + 1
     return None
 
 def strip_hl_from_alltt(alltt_content):
@@ -51,7 +59,7 @@ def strip_hl_from_alltt(alltt_content):
                 continue
         parts.append(alltt_content[i])
         i += 1
-    return ''.join(parts)
+    return ''.join(parts).replace('\\{', '{').replace('\\}', '}')
 
 def process_alltt_environments(content):
     result = []
@@ -217,6 +225,42 @@ content = re.sub(
 # Strip \hlXXX commands from alltt environments and convert to verbatim
 # (Pandoc does not allow \textcolor inside alltt)
 content = process_alltt_environments(content)
+
+# Convert knitrmini Shaded/Highlighting blocks to verbatim
+def process_shaded_highlighting(content):
+    result = []
+    pos = 0
+    while True:
+        start = content.find('\\begin{Shaded}', pos)
+        if start == -1:
+            result.append(content[pos:])
+            break
+        result.append(content[pos:start])
+        end = content.find('\\end{Shaded}', start)
+        if end == -1:
+            result.append(content[start:])
+            break
+        inner = content[start + len('\\begin{Shaded}'):end]
+        hl_start = inner.find('\\begin{Highlighting}')
+        if hl_start != -1:
+            hl_header_end = inner.find('\n', hl_start)
+            if hl_header_end == -1:
+                hl_header_end = hl_start + len('\\begin{Highlighting}')
+            hl_end = inner.find('\\end{Highlighting}', hl_header_end)
+            if hl_end != -1:
+                code = inner[hl_header_end:hl_end].strip('\n')
+                cleaned = strip_hl_from_alltt(code)
+                result.append('\\begin{verbatim}')
+                result.append(cleaned)
+                result.append('\\end{verbatim}')
+            else:
+                result.append(inner)
+        else:
+            result.append(inner)
+        pos = end + len('\\end{Shaded}')
+    return ''.join(result)
+
+content = process_shaded_highlighting(content)
 
 # Strip knitr wrapper environments (no-ops in DOCX output)
 content = re.sub(r'\\begin\{knitrout\}', '', content)

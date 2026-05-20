@@ -179,6 +179,7 @@ The conversion runs three stages:
 - Expands `\appendixtitleblock` with paper title and authors
 - Converts `\printbibliography[heading=bibnumbered, title={References}]` to a plain `\section{References}` (needed for the `refsection-bibliographies.lua` filter)
 - Strips knitr wrapper environments (`knitrout`, `kframe`) — only needed when compiling with knitr, no-ops with knitrmini
+- Converts knitrmini `Shaded`/`Highlighting` code blocks to `verbatim` with `\hl` commands stripped — no-ops with knitr
 - Replaces `alltt` environments with `verbatim` (Pandoc doesn't support `\hl` commands inside `alltt`) — only needed when compiling with knitr, no-ops with knitrmini
 - Fixes `\nptextcite` → `\textcite`
 
