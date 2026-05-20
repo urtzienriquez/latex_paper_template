@@ -19,10 +19,7 @@
 \usepackage{authblk}
 \renewcommand*{\Affilfont}{\footnotesize\normalfont}
 
-% knitr, listings, and text code formatting packages
-\usepackage{alltt}
-\usepackage{framed}
-\usepackage{etoolbox}
+% listings and text code formatting packages
 \usepackage{listings}
 
 % hyperlinks
@@ -67,35 +64,7 @@
 }
 \makeatother
 
-% knitr code block customizations 
-\definecolor{fgcolor}{rgb}{0.000, 0.000, 0.000}
-\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}
-\definecolor{messagecolor}{rgb}{0, 0, 0}
-\definecolor{warningcolor}{rgb}{1, 0, 1}
-\definecolor{errorcolor}{rgb}{1, 0, 0}
 
-\newenvironment{knitrout}{}{}
-
-% redefine kframe to be completely transparent/empty
-\newenvironment{kframe}{}{}
-
-% wrap only the source code block (alltt) inside the gray box
-\BeforeBeginEnvironment{alltt}{\begin{snugshade}}
-    \AfterEndEnvironment{alltt}{\end{snugshade}}
-
-% knitr syntax highlighting (pandoc tango style match)
-\newcommand{\hlnum}[1]{\textcolor[rgb]{0.000,0.000,0.812}{#1}}
-\newcommand{\hlstr}[1]{\textcolor[rgb]{0.306,0.604,0.024}{#1}}
-\newcommand{\hlsng}[1]{\textcolor[rgb]{0.306,0.604,0.024}{#1}}
-\newcommand{\hlcom}[1]{\textcolor[rgb]{0.561,0.349,0.008}{\textit{#1}}}
-\newcommand{\hlopt}[1]{\textcolor[rgb]{0.808,0.361,0.000}{\textbf{#1}}}
-\newcommand{\hlstd}[1]{\textcolor[rgb]{0.000,0.000,0.000}{#1}}
-\newcommand{\hldef}[1]{\textcolor[rgb]{0.000,0.000,0.000}{#1}}
-\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.125,0.290,0.529}{\textbf{#1}}}
-\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.561,0.349,0.008}{#1}}
-\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.125,0.290,0.529}{\textbf{#1}}}
-\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.125,0.290,0.529}{#1}}
-\newcommand{\hlkwr}[1]{\textcolor[rgb]{0.647,0.000,0.000}{\textbf{#1}}}
 
 % listings configurations for inline \R
 \lstset{
