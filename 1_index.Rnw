@@ -13,14 +13,14 @@
 <<setup, include=FALSE>>=
 library(knitrmini)
 opts_chunk$set(
+  cache = 2,
   echo = FALSE,
   message = FALSE,
   warning = FALSE,
   fig.width = 6,
   fig.height = 4,
   fig.align = "center",
-  fig.pos = "!htb",
-  fig.path = file.path(getwd(), "figures/")
+  fig.pos = "!htb"
 )
 @
 
