@@ -283,7 +283,7 @@ PYTHON_SCRIPT
     [ -f "packages.bib" ] && cmd+=(--bibliography=packages.bib)
 
     cmd+=(--lua-filter refsection-bibliographies.lua
-        -csl global-ecology-and-biogeography.csl
+        --csl global-ecology-and-biogeography.csl
         --lua-filter number-figures.lua
         --lua-filter number-tables.lua
         --lua-filter fix-inner-parens.lua
