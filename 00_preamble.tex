@@ -1,7 +1,24 @@
 \documentclass[12pt]{article}
+% fonts: under pdfLaTeX, accented letters as one glyph (searchable, hyphenated); LuaLaTeX has them
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
 
 % page layout
 \usepackage[margin=1in]{geometry}
+
+% the switches of manuscript.nvim's variants (:Manuscript build anon, review, draft, or a journal's
+% in .manuscript.lua): all off when the paper is built otherwise
+\ifcsname ifanonymous\endcsname\else\expandafter\newif\csname ifanonymous\endcsname\fi
+\ifcsname ifdraftversion\endcsname\else\expandafter\newif\csname ifdraftversion\endcsname\fi
+\ifcsname iflinenumbers\endcsname\else\expandafter\newif\csname iflinenumbers\endcsname\fi
+\ifcsname ifdoublespacing\endcsname\else\expandafter\newif\csname ifdoublespacing\endcsname\fi
+\ifcsname iffiguresatend\endcsname\else\expandafter\newif\csname iffiguresatend\endcsname\fi
+\iflinenumbers\usepackage{lineno}\linenumbers\fi
+\ifdoublespacing\usepackage{setspace}\doublespacing\fi
+\iffiguresatend\usepackage[nolists,nomarkers]{endfloat}\fi
 
 % graphics and colors
 \usepackage[dvipsnames]{xcolor}
@@ -32,8 +49,9 @@
   urlcolor=Blue
 }
 
-% custom commands for title page
-\input{01_titlepage}
+% title and authors (the authors: not in an anonymous version)
+\input{01_title}
+\input{01_authors}
 \date{\vspace{-5ex}}
 
 \makeatletter

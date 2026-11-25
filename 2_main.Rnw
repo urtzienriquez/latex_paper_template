@@ -6,5 +6,9 @@
 
 
 
+\ifanonymous\else
+\section*{Acknowledgements}
+\fi
+
 % REFERENCES section
 \printbibliography[heading=bibnumbered, title={References}]

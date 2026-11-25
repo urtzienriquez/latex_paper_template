@@ -1,0 +1,20 @@
+% the cover letter (:Manuscript submit builds it)
+\documentclass[12pt]{letter}
+% fonts: under pdfLaTeX, accented letters as one glyph (searchable, hyphenated); LuaLaTeX has them
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
+\usepackage[a4paper, margin=1in]{geometry}
+\signature{First Author}
+\address{Affiliation One}
+\begin{document}
+\begin{letter}{The Editor}
+\opening{Dear Editor,}
+
+Please find enclosed our manuscript, ``Title'', which we submit for consideration as an article.
+
+\closing{Yours sincerely,}
+\end{letter}
+\end{document}

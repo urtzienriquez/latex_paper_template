@@ -2,38 +2,68 @@
 
 A reusable template for academic papers written in **Rnoweb** (`.Rnw` — mix LaTeX with R code chunks). Works with either **knitrmini** (out-of-the-box) or **knitr** (requires additional setup snippets, documented below).
 
-If you use the template or the conversion utilities and find any bugs, issue reports are very welcome.
+It is made for [manuscript.nvim](https://github.com/urtzienriquez/manuscript.nvim), which builds it,
+exports it to Word and back, and makes the files a journal asks for (anonymous or not), but it
+compiles by hand too. If you use the template and find any bugs, issue reports are very welcome.
 
 ---
 
 ## Prerequisites
 
-- LaTeX distribution with `latexmk`, `lualatex`, `biber`
-- `pdftocairo` (from poppler-utils) — used to convert TikZ PDF output to SVG
+- LaTeX distribution with `latexmk`, `pdflatex` (or `lualatex`: both work; pdfLaTeX is ~20% faster), `biber`
 - R with the `knitrmini` package (or `knitr` — see [Compiling](#compiling) for setup differences)
 
 ## Project structure
 
 ```
-├── 00_preamble.tex       Packages, settings, preamble
-├── 01_titlepage.tex      Title, authors, affiliations
+├── 00_preamble.tex       Packages, settings, preamble (and the switches of the variants)
+├── 01_title.tex          Title
+├── 01_authors.tex        Authors and affiliations (left out of an anonymous version)
 ├── 1_index.Rnw           Main file — knit this to compile
 ├── 2_main.Rnw            Main body
 ├── 3_appendix1.Rnw       Appendix 1
 ├── 4_appendix2.Rnw       Appendix 2
-└── toword/               LaTeX → DOCX conversion (see below)
+├── title_page.tex        The title page, for journals that ask for it apart
+├── cover_letter.tex      The cover letter
+└── .manuscript.lua       manuscript.nvim's options for this paper: a journal's variant
 ```
 
 ---
 
-## Compiling
+## With manuscript.nvim
+
+`:Manuscript new latex_paper_template paper` makes a paper from this template (with
+`templates = "~/Templates"` in its setup). Then, from any of its files:
+
+| Command | |
+| --- | --- |
+| `:Manuscript build` | the PDF of the part you are in (`main.pdf`), or of the whole |
+| `:Manuscript build anon` | the same, anonymous (`main-anon.pdf`); `review`: line numbers, double spacing |
+| `:Manuscript export` / `merge` | Word files for your collaborators, and their edits back |
+| `:Manuscript submit geb` | the files for a journal: PDFs, and a zip of the LaTeX that compiles them |
+| `:Manuscript diff @geb` | the tracked changes since that submission |
+| `:Manuscript respond` | the response to the reviewers, from their comments |
+
+The switches (`\ifanonymous`, `\iflinenumbers`, `\ifdoublespacing`, `\iffiguresatend`,
+`\ifdraftversion`) are set by the variant a build is made with, and are all off when the paper is
+compiled by hand. A journal's variant goes in `.manuscript.lua`:
+
+```lua
+return {
+  variants = {
+    geb = { anonymous = true, linenumbers = true, doublespacing = true },
+  },
+}
+```
+
+## Compiling by hand
 
 ### Using knitrmini
 
 The template works out-of-the-box with knitrmini. It knits to `.tex` and compiles to PDF in one call.
 
 ```r
-R -e 'knitrmini::opts_knit$set(engine = "lualatex"); knitrmini::knit("1_index.Rnw")'
+R -e 'knitrmini::knit("1_index.Rnw", engine = "pdflatex")'
 ```
 
 ### Using knitr
@@ -93,10 +123,12 @@ knitr::knit_hooks$set(document = function(x) {
   full_text <- paste(x, collapse = "\n")
   if (file.exists("00_preamble.tex")) {
     preamble_text <- paste(readLines("00_preamble.tex"), collapse = "\n")
-    if (file.exists("01_titlepage.tex")) {
-      title_text <- paste(readLines("01_titlepage.tex"), collapse = "\n")
-      title_text_escaped <- gsub("\\\\", "\\\\\\\\", title_text)
-      preamble_text <- gsub("\\\\(input|include)\\{01_titlepage(\\.tex)?\\}", title_text_escaped, preamble_text)
+    for (part in c("01_title", "01_authors")) {
+      if (file.exists(paste0(part, ".tex"))) {
+        part_text <- paste(readLines(paste0(part, ".tex")), collapse = "\n")
+        part_text_escaped <- gsub("\\\\", "\\\\\\\\", part_text)
+        preamble_text <- gsub(paste0("\\\\(input|include)\\{", part, "(\\.tex)?\\}"), part_text_escaped, preamble_text)
+      }
     }
     preamble_text_escaped <- gsub("\\\\", "\\\\\\\\", preamble_text)
     full_text <- gsub("\\\\input\\{00_preamble(\\.tex)?\\}", preamble_text_escaped, full_text)
@@ -110,13 +142,13 @@ knitr::knit_hooks$set(document = function(x) {
 Then compile with knitr:
 
 ```
-R -e 'knitr::knit("1_index.Rnw"); system("latexmk -lualatex -bibtex -interaction=nonstopmode -synctex=1 -f 1_index.tex")'
+R -e 'knitr::knit("1_index.Rnw"); system("latexmk -pdf -bibtex -interaction=nonstopmode -synctex=1 -f 1_index.tex")'
 ```
 
 For a custom output name:
 
 ```
-R -e 'knitr::knit("1_index.Rnw", output = "my_paper.tex"); system("latexmk -lualatex -bibtex -interaction=nonstopmode -synctex=1 -f my_paper.tex")'
+R -e 'knitr::knit("1_index.Rnw", output = "my_paper.tex"); system("latexmk -pdf -bibtex -interaction=nonstopmode -synctex=1 -f my_paper.tex")'
 ```
 
 ---
@@ -146,54 +178,3 @@ latexmk -C 1_index.tex
 ```
 
 ---
-
-## Word conversion (toword)
-
-The `toword/` directory converts the compiled LaTeX to `.docx` using Pandoc with several Lua filters and post-processing steps.
-
-### Setup
-
-Copy your `.tex`, `.bib`, and `.csl` files into the `toword/` directory, then run:
-
-```
-toword [-m] [-t] -i input.tex -o output.docx
-```
-
-### Options
-
-| Flag                   | Description                                          |
-| ---------------------- | ---------------------------------------------------- |
-| `-i`, `--input`        | Input `.tex` file                                    |
-| `-o`, `--output`       | Output `.docx` file                                  |
-| `-m`, `--move-figures` | Move figures to end of document (publisher-friendly) |
-| `-t`, `--move-tables`  | Move tables to end of document (publisher-friendly)  |
-
-### What it does
-
-The conversion runs three stages:
-
-**1. Pre-processing (Python)** — modifies the LaTeX before Pandoc touches it:
-
-- Reformats `\author` / `\affil` (authblk) into plain text
-- Converts TikZ pictures to SVG images (via `pdflatex` + `pdftocairo`); images are named after their `\label{fig:...}` when available, falling back to a content hash
-- Expands `\appendixtitleblock` with paper title and authors
-- Converts `\printbibliography[heading=bibnumbered, title={References}]` to a plain `\section{References}` (needed for the `refsection-bibliographies.lua` filter)
-- Strips knitr wrapper environments (`knitrout`, `kframe`) — only needed when compiling with knitr, no-ops with knitrmini
-- Converts knitrmini `Shaded`/`Highlighting` code blocks to `verbatim` with `\hl` commands stripped — no-ops with knitr
-- Replaces `alltt` environments with `verbatim` (Pandoc doesn't support `\hl` commands inside `alltt`) — only needed when compiling with knitr, no-ops with knitrmini
-- Fixes `\nptextcite` → `\textcite`
-
-**2. Pandoc conversion** — uses these filters and settings:
-
-| Component       | Detail                                                                                                                                                                                           |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Bibliography    | Loads `zotero.bib` and `packages.bib` if present                                                                                                                                                 |
-| CSL style       | `global-ecology-and-biogeography.csl`                                                                                                                                                            |
-| Lua filters     | `refsection-bibliographies.lua`, `number-figures.lua`, `number-tables.lua`, `fix-inner-parens.lua`, `fix-titleblock.lua`, `code-block-lang.lua`, `tikz-to-image.lua` (if exists), `move-figures.lua` (only with `-m`), `move-tables.lua` (only with `-t`) |
-| Highlight style | tango                                                                                                                                                                                            |
-| Reference doc   | `latex_word_ref.docx` (provides the base DOCX styling)           |
-
-**3. Post-processing (Python)** — patches the DOCX XML:
-
-- Centers the title paragraph; left-aligns the author paragraph
-- Sets `Free Mono` as monospace font for code blocks
