@@ -17,14 +17,13 @@ compiles by hand too. If you use the template and find any bugs, issue reports a
 
 ```
 ├── 00_preamble.tex       Packages, settings, preamble (and the switches of the variants)
-├── 01_title.tex          Title
-├── 01_authors.tex        Authors and affiliations (left out of an anonymous version)
+├── 01_metadata.tex       Title, authors and affiliations (the authors: left out of an anonymous version)
 ├── 1_index.Rnw           Main file — knit this to compile
 ├── 2_main.Rnw            Main body
 ├── 3_appendix1.Rnw       Appendix 1
 ├── 4_appendix2.Rnw       Appendix 2
-├── title_page.tex        The title page, for journals that ask for it apart
-├── cover_letter.tex      The cover letter
+├── title_page.tex        The title page, for journals that ask for it apart (a document of its own)
+├── cover_letter.tex      The cover letter (a document of its own)
 └── .manuscript.lua       manuscript.nvim's options for this paper: a journal's variant
 ```
 
@@ -123,7 +122,7 @@ knitr::knit_hooks$set(document = function(x) {
   full_text <- paste(x, collapse = "\n")
   if (file.exists("00_preamble.tex")) {
     preamble_text <- paste(readLines("00_preamble.tex"), collapse = "\n")
-    for (part in c("01_title", "01_authors")) {
+    for (part in c("01_metadata")) {
       if (file.exists(paste0(part, ".tex"))) {
         part_text <- paste(readLines(paste0(part, ".tex")), collapse = "\n")
         part_text_escaped <- gsub("\\\\", "\\\\\\\\", part_text)
